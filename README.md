@@ -15,3 +15,7 @@ A tool that converts an ICS file into RDF, using the event and timeline
 ontologies. The script requires a namespace passed on the command line
 which is simply the namespace of the URIs which are assigned to the
 events in the feed.
+
+rdf2json
+--------
+A tool that converts RDF into JSON, in a very generic way.

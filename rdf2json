@@ -1,0 +1,91 @@
+#!/usr/bin/php -q
+<?php
+
+include_once("/home/ash/tools/arc2/ARC2.php");
+include_once("/home/ash/tools/Graphite/Graphite.php");
+
+function getLabel($uri)
+{
+	$ret = array();
+	$g = new Graphite();
+	$g->load($uri);
+	$res = $g->get($uri);
+	$ret['uri'] = $uri;
+	$ret['label'] = $g->label();
+	return($ret);
+}
+
+function getProperties($g, $uri, $depth=10) // The depth thing prevents infinite loops, which often happen in RDF.
+{
+	if((preg_match("|^([a-zA-Z]+)://|", $uri) == 0) | ($depth < 1))
+	{
+		return($uri);
+	}
+
+	$ret = array();
+	$ret['uri'] = $uri;
+	$res = $g->resource($uri);
+
+	if(count($res->relations()) == 0)
+	{
+		return($uri);
+	}
+
+	foreach($res->relations() as $prop)
+	{
+		$prop_uri = "" . $prop;
+		$prop_name = preg_replace("|^(.*)[#/]([^#/]+)$|", "$2", $prop_uri);
+
+		if(strcmp(strtolower($prop_name), "homepage") == 0)
+		{
+			$ret[$prop_name] = "" . $res->get($prop_uri);
+			continue; 
+		}
+
+		$item = array();
+		foreach($res->all($prop_uri) as $obj)
+		{
+			$item[] = getProperties($g, "" . $obj, $depth - 1);
+		}
+		if(count($item) == 0)
+		{
+			continue;
+		}
+		if(count($item) == 1)
+		{
+			$item = $item[0];
+		}
+		$ret[$prop_name] = $item;
+	}
+	if(count($ret) == 1)
+	{
+		if(array_key_exists("uri", $ret))
+		{
+			$ret = $ret['uri'];
+		} else {
+			$ret = $ret[0];
+		}
+	}
+	return($ret);
+}
+
+if(count($argv) != 3)
+{
+	error_log("Use: rdf2json [rdf_file] [rdf_type]");
+	exit(1);
+}
+
+$file = $argv[1];
+$type = $argv[2];
+
+$g = new Graphite();
+$g->load($file);
+
+$data = array();
+foreach($g->allOfType($type) as $res)
+{
+	$item = getProperties($g, "" . $res);
+	$data[] = $item;
+}
+
+print(json_encode($data));
