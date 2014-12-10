@@ -1,0 +1,40 @@
+#!/usr/bin/php -q
+<?php
+
+$file = "php://stdin";
+if(count($argv) >= 2)
+{
+	$file = $argv[1];
+	if(!(file_exists($file)))
+	{
+		error_log("File not found!");
+		exit(1);
+	}
+}
+
+$data = array();
+$headers = array();
+$fp = fopen($file, "r");
+while($row = fgetcsv($fp))
+{
+	if(count($headers) == 0)
+	{
+		$headers = $row;
+		continue;
+	}
+	$c = count($headers);
+	$item = array();
+	if($c > count($row)) { $c = count($row); }
+	for($i = 0; $i < $c; $i++)
+	{
+		$item[preg_replace("/[^0-9a-z]+/", "-", strtolower($headers[$i]))] = $row[$i];
+	}
+	if(array_key_exists("course-id", $item))
+	{
+		$item['uri'] = "http://id.southampton.ac.uk/lynda-course/" . $item['course-id'];
+	}
+	$data[] = $item;
+}
+fclose($fp);
+
+print(json_encode($data));
