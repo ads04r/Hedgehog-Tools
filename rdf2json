@@ -1,8 +1,8 @@
 #!/usr/bin/php -q
 <?php
 
-include_once("/home/ash/tools/arc2/ARC2.php");
-include_once("/home/ash/tools/Graphite/Graphite.php");
+include_once($_SERVER['HEDGEHOG_CONFIG_ARC2_PATH']);
+include_once($_SERVER['HEDGEHOG_CONFIG_GRAPHITE_PATH']);
 
 function getLabel($uri)
 {
