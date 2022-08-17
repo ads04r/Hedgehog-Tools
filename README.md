@@ -19,3 +19,8 @@ events in the feed.
 rdf2json
 --------
 A tool that converts RDF into JSON, in a very generic way.
+
+wikitable
+---------
+A tool that reads a Wikipedia page with a table on it and formats it as
+a nice JSON structure.

@@ -1,0 +1,84 @@
+#!/usr/bin/python3
+
+import requests, sys, os, urllib.parse, json, re
+from bs4 import BeautifulSoup
+
+if int(len(sys.argv)) < 2:
+	print(sys.argv[0] + " [wiki_page]")
+	sys.exit(1)
+
+url = "https://en.wikipedia.org/wiki/" + (urllib.parse.quote(sys.argv[1]).replace("+", "_").replace("%20", "_"))
+
+r = requests.get(url)
+output = []
+
+soup = BeautifulSoup(r.text, features='lxml')
+for table in soup.find_all('table'):
+
+	if not('wikitable' in table['class']):
+		continue
+
+	max_width = 0
+	data = []
+	headers = []
+	for tr in table.find_all('tr'):
+		row = []
+		for td in tr.find_all('td'):
+			op = td.string
+			if op is None:
+				op = ''
+			if op == '':
+				for opp in td.stripped_strings:
+					op = op + opp + ' '
+			row.append(op.strip())
+		data.append(row)
+		if len(row) > max_width:
+			max_width = len(row)
+	for tr in table.find_all('tr'):
+		if len(tr.find_all('th')) == 0:
+			continue
+		headers.append([''] * max_width)
+	y = 0
+	for tr in table.find_all('tr'):
+		x = 0
+		for th in tr.find_all('th'):
+			while(headers[y][x] != ''):
+				x = x + 1
+			rows = 1
+			cols = 1
+			if 'colspan' in th.attrs:
+				cols = int(th['colspan'])
+			if 'rowspan' in th.attrs:
+				rows = int(th['rowspan'])
+			for xx in range(0, cols):
+				for yy in range(0, rows):
+					ttl = th.string
+					if ttl is None:
+						ttl = ''
+					if ttl == '':
+						for ttll in th.stripped_strings:
+							ttl = ttl + ttll + ' '
+					headers[y + yy][x + xx] = ttl.strip()
+		y = y + 1
+	compressed_headers = []
+	for x in range(0, max_width):
+		item = []
+		for y in range(0, len(headers)):
+			slug = re.sub(r'[^a-z]', '', headers[y][x].lower())
+			if slug in item:
+				continue
+			item.append(slug)
+		compressed_headers.append('_'.join(item))
+
+	ret = []
+	for item in data:
+		n = {}
+		if len(item) != len(compressed_headers):
+			continue
+		for i in range(0, len(compressed_headers)):
+			n[compressed_headers[i]] = item[i]
+		ret.append(n)
+
+	output.append(ret)
+
+print(json.dumps(output))
