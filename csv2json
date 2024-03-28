@@ -27,11 +27,7 @@ while($row = fgetcsv($fp))
 	if($c > count($row)) { $c = count($row); }
 	for($i = 0; $i < $c; $i++)
 	{
-		$item[preg_replace("/[^0-9a-z]+/", "-", strtolower($headers[$i]))] = $row[$i];
-	}
-	if(array_key_exists("course-id", $item))
-	{
-		$item['uri'] = "http://id.southampton.ac.uk/lynda-course/" . $item['course-id'];
+		$item[preg_replace("/[^0-9a-z]+/", "-", strtolower($headers[$i]))] = utf8_encode($row[$i]);
 	}
 	$data[] = $item;
 }
